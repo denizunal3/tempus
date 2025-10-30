@@ -87,7 +87,7 @@ const selectedClients = ref<string[]>([]);
 const billable = ref<'true' | 'false' | null>(null);
 
 const { members } = storeToRefs(useMembersStore());
-const pageLimit = 15;
+const pageLimit = 60;
 const currentPage = ref(1);
 
 function getFilterAttributes() {
@@ -130,7 +130,7 @@ const { createTimeEntry, updateTimeEntry, updateTimeEntries } =
 const { tags } = storeToRefs(useTagsStore());
 
 const { data: timeEntryResponse } = useQuery<TimeEntryResponse>({
-    queryKey: ['timeEntry', 'detailed-report'],
+    queryKey: ['timeEntry', 'detailed-report-60'],
     enabled: !!getCurrentOrganizationId(),
     queryFn: () =>
         api.getTimeEntries({
@@ -205,7 +205,7 @@ async function startTimeEntryFromExisting(entry: TimeEntry) {
 const queryClient = useQueryClient();
 async function updateFilteredTimeEntries() {
     await queryClient.invalidateQueries({
-        queryKey: ['timeEntry', 'detailed-report'],
+        queryKey: ['timeEntry', 'detailed-report-60'],
     });
 }
 watch(currentPage, () => {
@@ -256,11 +256,11 @@ async function downloadExport(format: ExportFormat) {
                     </TabBarItem>
                     <TabBarItem
                         @click="router.visit(route('reporting.detailed'))"
-                        active
                         >Detailed
                     </TabBarItem>
                     <TabBarItem
-                        @click="router.visit(route('reporting.detailed60'))">
+                        @click="router.visit(route('reporting.detailed60'))"
+                        active>
                         Extended
                     </TabBarItem>
                 </TabBar>
@@ -394,7 +394,13 @@ async function downloadExport(format: ExportFormat) {
             :create-client="createClient"
             :createTag="createTag"></TimeEntryMassActionRow>
         <div class="w-full relative">
-            <div v-for="entry in timeEntries" :key="entry.id">
+            <div
+                v-for="entry in timeEntries"
+                :key="entry.id"
+                class="transition-colors"
+                :class="{
+                    'bg-menu-active': selectedTimeEntries.includes(entry),
+                }">
                 <TimeEntryRow
                     :selected="selectedTimeEntries.includes(entry)"
                     @selected="selectedTimeEntries.push(entry)"

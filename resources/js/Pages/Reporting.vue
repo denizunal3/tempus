@@ -208,6 +208,10 @@ async function downloadExport(format: ExportFormat) {
                         @click="router.visit(route('reporting.detailed'))"
                         >Detailed</TabBarItem
                     >
+                    <TabBarItem
+                        @click="router.visit(route('reporting.detailed60'))"
+                        >Extended</TabBarItem
+                    >
                 </TabBar>
             </div>
             <ReportingExportButton
