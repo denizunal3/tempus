@@ -202,7 +202,7 @@ return [
     |
     */
     'composer' => [
-        'vendor' => env('MODULE_VENDOR', 'solidtime-io'),
+        'vendor' => env('MODULE_VENDOR', 'tempus-io'),
         'author' => [
             'name' => env('MODULE_AUTHOR_NAME', 'Nicolas Widart'),
             'email' => env('MODULE_AUTHOR_EMAIL', 'n.widart@gmail.com'),

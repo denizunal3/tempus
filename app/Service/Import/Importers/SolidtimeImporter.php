@@ -341,12 +341,12 @@ class SolidtimeImporter extends DefaultImporter
     #[Override]
     public function getName(): string
     {
-        return __('importer.solidtime_importer.name');
+        return __('importer.tempus_importer.name');
     }
 
     #[Override]
     public function getDescription(): string
     {
-        return __('importer.solidtime_importer.description');
+        return __('importer.tempus_importer.description');
     }
 }

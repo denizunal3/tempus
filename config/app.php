@@ -18,7 +18,7 @@ return [
     |
     */
 
-    'name' => 'solidtime',
+    'name' => 'tempus',
 
     'version' => env('APP_VERSION'),
 
@@ -119,7 +119,7 @@ return [
 
     'faker_locale' => 'en_US',
 
-    'pagination_per_page_default' => (int) env('PAGINATION_PER_PAGE_DEFAULT', 15),
+    'pagination_per_page_default' => (int) env('PAGINATION_PER_PAGE_DEFAULT', 60),
 
     /*
     |--------------------------------------------------------------------------

@@ -33,7 +33,7 @@ export const useCurrentTimeEntryStore = defineStore('currentTimeEntry', () => {
     const currentTimeEntry = ref<TimeEntry>(reactive(emptyTimeEntry));
     const { handleApiRequestNotifications } = useNotificationsStore();
 
-    useLocalStorage('solidtime/current-time-entry', currentTimeEntry, {
+    useLocalStorage('tempus/current-time-entry', currentTimeEntry, {
         deep: true,
     });
 

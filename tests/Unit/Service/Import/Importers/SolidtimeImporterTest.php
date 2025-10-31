@@ -41,7 +41,7 @@ class SolidtimeImporterTest extends ImporterTestAbstract
     public function test_import_of_test_file_succeeds(): void
     {
         // Arrange
-        $zipPath = $this->createTestZip('solidtime_import_test_1');
+        $zipPath = $this->createTestZip('tempus_import_test_1');
         $timezone = 'Europe/Vienna';
         $organization = Organization::factory()->create();
         $importer = new SolidtimeImporter;
@@ -66,7 +66,7 @@ class SolidtimeImporterTest extends ImporterTestAbstract
     public function test_import_of_test_file_twice_succeeds(): void
     {
         // Arrange
-        $zipPath = $this->createTestZip('solidtime_import_test_1');
+        $zipPath = $this->createTestZip('tempus_import_test_1');
         $timezone = 'Europe/Vienna';
         $organization = Organization::factory()->create();
         $importer = new SolidtimeImporter;

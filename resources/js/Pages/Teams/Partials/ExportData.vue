@@ -81,9 +81,9 @@ async function exportData() {
                 <InformationCircleIcon
                     class="h-5 min-w-0 w-5 text-bg-tertiary" />
                 <p class="flex-1">
-                    Export your solidtime organization data. This will include
-                    all clients, projects, tasks, and time entries. You will
-                    receive a zip file with json files for each entity.
+                    Export your tempus organization data. This will include all
+                    clients, projects, tasks, and time entries. You will receive
+                    a zip file with json files for each entity.
                 </p>
             </div>
         </Card>

@@ -66,4 +66,4 @@ jobs:
         uses: codecov/codecov-action@v4.5.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: solidtime-io/solidtime
+          slug: tempus-io/tempus

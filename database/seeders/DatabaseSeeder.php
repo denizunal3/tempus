@@ -160,7 +160,7 @@ class DatabaseSeeder extends Seeder
         app(ClientRepository::class)->create(
             null,
             'desktop',
-            'solidtime://oauth/callback',
+            'tempus://oauth/callback',
             null,
             false,
             false,

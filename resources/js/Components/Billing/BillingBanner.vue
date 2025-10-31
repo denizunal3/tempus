@@ -52,7 +52,7 @@ const showFreeUpgradeBanner = computed(
                     </span>
                     <span class="hidden md:inline">
                         To continue using all features & support the development
-                        of solidtime, please upgrade your plan.
+                        of tempus, please upgrade your plan.
                     </span>
                 </div>
             </div>
@@ -114,7 +114,7 @@ const showFreeUpgradeBanner = computed(
                     </span>
                     <span class="hidden md:inline">
                         To unlock all premium features & support the development
-                        of solidtime, please upgrade your plan.</span
+                        of tempus, please upgrade your plan.</span
                     >
                 </div>
             </div>

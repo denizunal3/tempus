@@ -19,11 +19,11 @@ use Tests\TestCase;
 #[UsesClass(SelfHostTelemetryCommand::class)]
 class SelfHostTelemetryCommandTest extends TestCase
 {
-    public function test_telemetry_sends_data_to_telemetry_endpoint_of_solidtime_cloud(): void
+    public function test_telemetry_sends_data_to_telemetry_endpoint_of_tempus_cloud(): void
     {
         // Arrange
         Http::fake([
-            'https://app.solidtime.io/api/v1/ping/telemetry' => Http::response(['success' => true], 200),
+            'https://app.tempus.io/api/v1/ping/telemetry' => Http::response(['success' => true], 200),
         ]);
 
         // Act
@@ -39,7 +39,7 @@ class SelfHostTelemetryCommandTest extends TestCase
     {
         // Arrange
         Http::fake([
-            'https://app.solidtime.io/api/v1/ping/telemetry' => Http::response(null, 500),
+            'https://app.tempus.io/api/v1/ping/telemetry' => Http::response(null, 500),
         ]);
 
         // Act
@@ -55,7 +55,7 @@ class SelfHostTelemetryCommandTest extends TestCase
     {
         // Arrange
         Http::fake([
-            'https://app.solidtime.io/api/v1/ping/telemetry' => function (): void {
+            'https://app.tempus.io/api/v1/ping/telemetry' => function (): void {
                 throw new ConnectionException('Connection timed out');
             },
         ]);

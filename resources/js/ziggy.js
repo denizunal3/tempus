@@ -1,5 +1,5 @@
 const Ziggy = {
-    'url': 'http://solidtime.test',
+    'url': 'http://tempus.test',
     'port': null,
     'defaults': {},
     'routes': {

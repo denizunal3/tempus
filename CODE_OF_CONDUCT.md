@@ -38,5 +38,5 @@ or permanently any contributor for other behaviors that they deem inappropriate,
 
 ## Contact
 
-If you feel uncomfortable or believe that someone has violated the code of conduct, please contact us at [hello@solidtime.io](mailto:hello@solidtime.io).
+If you feel uncomfortable or believe that someone has violated the code of conduct, please contact us at [hello@tempus.io](mailto:hello@tempus.io).
 We will thoroughly investigate the incident and aim for the best possible outcome.

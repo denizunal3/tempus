@@ -24,7 +24,7 @@ class SelfHostCheckForUpdateCommandTest extends TestCase
     {
         // Arrange
         Http::fake([
-            'https://app.solidtime.io/api/v1/ping/version' => Http::response(['version' => '1.2.3'], 200),
+            'https://app.tempus.io/api/v1/ping/version' => Http::response(['version' => '1.2.3'], 200),
         ]);
 
         // Act
@@ -40,7 +40,7 @@ class SelfHostCheckForUpdateCommandTest extends TestCase
     {
         // Arrange
         Http::fake([
-            'https://app.solidtime.io/api/v1/ping/version' => Http::response(null, 500),
+            'https://app.tempus.io/api/v1/ping/version' => Http::response(null, 500),
         ]);
 
         // Act
@@ -56,7 +56,7 @@ class SelfHostCheckForUpdateCommandTest extends TestCase
     {
         // Arrange
         Http::fake([
-            'https://app.solidtime.io/api/v1/ping/version' => function (): void {
+            'https://app.tempus.io/api/v1/ping/version' => function (): void {
                 throw new ConnectionException('Connection timed out');
             },
         ]);

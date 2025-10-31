@@ -10,7 +10,7 @@ return [
             '3. Now select the date range that you want to export in the right top. '.
             'It is currently not possible to select more than one year. You can export each year separately and import them one after another .'.
             '<br> 4. Now click Export -> Save as CSV. The Export dropdown is in the header of the export table left of the printer symbol. '.
-            '<br><br>Before you import make sure that the Timezone settings in Clockify are the same as in solidtime.',
+            '<br><br>Before you import make sure that the Timezone settings in Clockify are the same as in tempus.',
     ],
     'clockify_projects' => [
         'name' => 'Clockify Projects',
@@ -30,9 +30,9 @@ return [
         'name' => 'Toggl Time Entries',
         'description' => '<strong>Important:</strong> If you want to import a Toggl organization use the "Toggl Data Importer" before using this importer, since this export contains more details. '.
             '<br><br>1. Go to Admin -> Settings -> Data export. <br>2. Under "Time entries" select the year you want to export and click on "Export time entries". <br><br>You can export all years one after another and import them one after another. '.
-            ' <br>Before you import make sure that the Timezone settings in Toggl are the same as in solidtime.',
+            ' <br>Before you import make sure that the Timezone settings in Toggl are the same as in tempus.',
     ],
-    'solidtime_importer' => [
+    'tempus_importer' => [
         'name' => 'Solidtime',
         'description' => '1. Choose the organization you want to export in dropdown in the left top corner<br>2. Click on "Export" in the left navigation under "Admin" (You need to be Admin or Owner of the organization to see this)<br>3. Click on "Export". <br>4. Save the file and upload it here.',
     ],

@@ -10,7 +10,7 @@ use Illuminate\Support\Carbon;
 /**
  * This class is a contract for the billing system
  * The billing system is responsible for managing the subscriptions of organizations
- * The concrete implementation of this contract for the cloud version of solidtime is implemented in an extension
+ * The concrete implementation of this contract for the cloud version of tempus is implemented in an extension
  */
 class BillingContract
 {

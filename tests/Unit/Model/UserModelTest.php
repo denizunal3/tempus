@@ -148,7 +148,7 @@ class UserModelTest extends ModelTestAbstract
         $user = User::factory()->create();
         $client = new Client;
         $client->name = 'desktop';
-        $client->redirect = 'solidtime://oauth/callback';
+        $client->redirect = 'tempus://oauth/callback';
         $client->personal_access_client = false;
         $client->password_client = false;
         $client->revoked = false;
@@ -179,7 +179,7 @@ class UserModelTest extends ModelTestAbstract
         $user = User::factory()->create();
         $client = new Client;
         $client->name = 'desktop';
-        $client->redirect = 'solidtime://oauth/callback';
+        $client->redirect = 'tempus://oauth/callback';
         $client->personal_access_client = false;
         $client->password_client = false;
         $client->revoked = false;

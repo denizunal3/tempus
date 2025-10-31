@@ -1,47 +1,30 @@
-# Accepted values: 8.3 - 8.2
 ARG PHP_VERSION=8.3
-
-ARG FRANKENPHP_VERSION=latest
-
-ARG COMPOSER_VERSION=latest
-
+ARG FRANKENPHP_VERSION=1.8
+ARG COMPOSER_VERSION=2.8
+ARG BUN_VERSION="latest"
+ARG APP_ENV
 ARG DOCKER_FILES_BASE_PATH="docker/prod/"
-
-###########################################
-# Build frontend assets with NPM
-###########################################
-
-#ARG NODE_VERSION=20-alpine
-#
-#FROM node:${NODE_VERSION} AS build
-#
-#ENV ROOT=/var/www/html
-#
-#WORKDIR ${ROOT}
-#
-#RUN npm config set update-notifier false && npm set progress=false
-#
-#COPY package*.json ./
-#
-#RUN if [ -f $ROOT/package-lock.json ]; \
-#    then \
-#    npm ci --loglevel=error --no-audit; \
-#    else \
-#    npm install --loglevel=error --no-audit; \
-#    fi
-#
-#COPY . .
-#
-#RUN npm run build
-
-###########################################
 
 FROM composer:${COMPOSER_VERSION} AS vendor
 
-FROM dunglas/frankenphp:${FRANKENPHP_VERSION}-php${PHP_VERSION}
+FROM dunglas/frankenphp:${FRANKENPHP_VERSION}-builder-php${PHP_VERSION} AS upstream
 
-ARG DOCKER_FILES_BASE_PATH
-ARG TARGETPLATFORM
+COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
+
+RUN CGO_ENABLED=1 \
+    XCADDY_SETCAP=1 \
+    XCADDY_GO_BUILD_FLAGS="-ldflags='-w -s' -tags=nobadger,nomysql,nopgx" \
+    CGO_CFLAGS=$(php-config --includes) \
+    CGO_LDFLAGS="$(php-config --ldflags) $(php-config --libs)" \
+    xcaddy build v2.10.0 \
+        --output /usr/local/bin/frankenphp \
+        --with github.com/dunglas/frankenphp=./ \
+        --with github.com/dunglas/frankenphp/caddy=./caddy/ \
+        --with github.com/dunglas/caddy-cbrotli
+
+FROM dunglas/frankenphp:${FRANKENPHP_VERSION}-php${PHP_VERSION} AS base
+
+COPY --from=upstream /usr/local/bin/frankenphp /usr/local/bin/frankenphp
 
 LABEL maintainer="solidtime <hello@solidtime.io>"
 LABEL org.opencontainers.image.title="solidtime"
@@ -53,18 +36,22 @@ ARG WWWUSER=1000
 ARG WWWGROUP=1000
 ARG TZ=UTC
 ARG APP_DIR=/var/www/html
+ARG APP_ENV
+ARG APP_HOST
+ARG DOCKER_FILES_BASE_PATH
 
 ENV DEBIAN_FRONTEND=noninteractive \
     TERM=xterm-color \
-    WITH_HORIZON=false \
-    WITH_SCHEDULER=false \
     OCTANE_SERVER=frankenphp \
+    TZ=${TZ} \
     USER=octane \
     ROOT=${APP_DIR} \
+    APP_ENV=${APP_ENV} \
     COMPOSER_FUND=0 \
     COMPOSER_MAX_PARALLEL_HTTP=24 \
     XDG_CONFIG_HOME=${APP_DIR}/.config \
-    XDG_DATA_HOME=${APP_DIR}/.data
+    XDG_DATA_HOME=${APP_DIR}/.data \
+    SERVER_NAME=${APP_HOST}
 
 WORKDIR ${ROOT}
 
@@ -78,14 +65,16 @@ RUN apt-get update; \
     apt-get install -yqq --no-install-recommends --show-progress \
     apt-utils \
     curl \
-    gcc \
     wget \
-    nano \
+    vim \
+    git \
     ncdu \
     procps \
+    unzip \
     ca-certificates \
     supervisor \
     libsodium-dev \
+    libbrotli-dev \
     # Install PHP extensions (included with dunglas/frankenphp)
     && install-php-extensions \
     bz2 \
@@ -99,6 +88,8 @@ RUN apt-get update; \
     exif \
     pdo_mysql \
     zip \
+    uv \
+    vips \
     intl \
     gd \
     redis \
@@ -128,58 +119,106 @@ RUN arch="$(uname -m)" \
 
 RUN userdel --remove --force www-data \
     && groupadd --force -g ${WWWGROUP} ${USER} \
-    && useradd -ms /bin/bash --no-log-init --no-user-group -g ${WWWGROUP} -u ${WWWUSER} ${USER}
+    && useradd -ms /bin/bash --no-log-init --no-user-group -g ${WWWGROUP} -u ${WWWUSER} ${USER} \
+    && setcap -r /usr/local/bin/frankenphp
 
 RUN chown -R ${USER}:${USER} ${ROOT} /var/{log,run} \
     && chmod -R a+rw ${ROOT} /var/{log,run}
 
 RUN cp ${PHP_INI_DIR}/php.ini-production ${PHP_INI_DIR}/php.ini
 
-COPY --chown=${USER}:${USER} ${DOCKER_FILES_BASE_PATH}deployment/php.ini ${PHP_INI_DIR}/conf.d/99-octane-default.ini
-COPY --chown=${USER}:${USER} ${DOCKER_FILES_BASE_PATH}deployment/php-arm.ini ${PHP_INI_DIR}/conf.d/99-octane-arm.ini
-
-RUN echo "TARGETPLATFORM is equal to ${TARGETPLATFORM}"
-RUN if [ "${TARGETPLATFORM}" = "linux/arm64" ]; then \
-    rm ${PHP_INI_DIR}/conf.d/99-octane-default.ini; \
-    else \
-    rm ${PHP_INI_DIR}/conf.d/99-octane-arm.ini; \
-    fi
-
 USER ${USER}
 
-COPY --chown=${USER}:${USER} --from=vendor /usr/bin/composer /usr/bin/composer
-#COPY --chown=${USER}:${USER} composer.json composer.lock ./
-#
-#RUN composer install \
-#    --no-dev \
-#    --no-interaction \
-#    --no-autoloader \
-#    --no-ansi \
-#    --no-scripts \
-#    --audit
+COPY --link --chown=${WWWUSER}:${WWWUSER} --from=vendor /usr/bin/composer /usr/bin/composer
 
-COPY --chown=${USER}:${USER} . .
-#COPY --chown=${USER}:${USER} --from=build ${ROOT}/public public
+COPY --link --chown=${WWWUSER}:${WWWUSER} ${DOCKER_FILES_BASE_PATH}deployment/supervisord.conf /etc/supervisor/
+COPY --link --chown=${WWWUSER}:${WWWUSER} ${DOCKER_FILES_BASE_PATH}deployment/octane/FrankenPHP/supervisord.frankenphp.conf /etc/supervisor/conf.d/
+COPY --link --chown=${WWWUSER}:${WWWUSER} ${DOCKER_FILES_BASE_PATH}deployment/supervisord.*.conf /etc/supervisor/conf.d/
+COPY --link --chown=${WWWUSER}:${WWWUSER} ${DOCKER_FILES_BASE_PATH}deployment/start-container /usr/local/bin/start-container
+COPY --link --chown=${WWWUSER}:${WWWUSER} ${DOCKER_FILES_BASE_PATH}deployment/php.ini ${PHP_INI_DIR}/conf.d/99-octane.ini
+
+RUN chmod +x /usr/local/bin/start-container
+
+###########################################
+
+FROM base AS common
+
+USER ${WWWUSER}
+
+COPY --link --chown=${WWWUSER}:${WWWUSER} . .
+
+
+RUN composer install \
+   --no-dev \
+   --no-interaction \
+   --no-autoloader \
+   --no-ansi \
+   --no-scripts \
+   --prefer-dist \
+   --ignore-platform-reqs \
+   --classmap-authoritative
+
+
+###########################################
+# Build frontend assets with Bun
+###########################################
+
+FROM node:20-alpine AS build
+
+ENV ROOT=/var/www/html
+
+WORKDIR ${ROOT}
+
+RUN npm config set update-notifier false && npm set progress=false
+
+COPY package*.json ./
+COPY --link --from=common ${ROOT}/vendor vendor
+
+RUN if [ -f $ROOT/package-lock.json ]; \
+   then \
+   npm ci --loglevel=error --no-audit; \
+   else \
+   npm install --loglevel=error --no-audit; \
+   fi
+
+COPY . .
+
+RUN npm run build
+
+###########################################
+
+FROM common AS runner
+
+USER ${WWWUSER}
+
+COPY --link --chown=${WWWUSER}:${WWWUSER} . .
+
+ENV WITH_HORIZON=false \
+    WITH_SCHEDULER=false \
+    WITH_REVERB=false
+
+COPY --link --chown=${WWWUSER}:${WWWUSER} . .
+COPY --link --chown=${WWWUSER}:${WWWUSER} --from=build ${ROOT}/public public
+
+COPY --link --chown=${WWWUSER}:${WWWUSER} --from=vendor /usr/bin/composer /usr/bin/composer
+
+COPY --link --chown=${WWWUSER}:${WWWUSER} ${DOCKER_FILES_BASE_PATH}deployment/supervisord.conf /etc/
+COPY --link --chown=${WWWUSER}:${WWWUSER} ${DOCKER_FILES_BASE_PATH}deployment/octane/FrankenPHP/supervisord.frankenphp.conf /etc/supervisor/conf.d/
+COPY --link --chown=${WWWUSER}:${WWWUSER} ${DOCKER_FILES_BASE_PATH}deployment/supervisord.*.conf /etc/supervisor/conf.d/
+COPY --link --chown=${WWWUSER}:${WWWUSER} ${DOCKER_FILES_BASE_PATH}deployment/start-container /usr/local/bin/start-container
+COPY --link --chown=${WWWUSER}:${WWWUSER} ${DOCKER_FILES_BASE_PATH}deployment/php.ini ${PHP_INI_DIR}/conf.d/99-octane.ini
 
 RUN mkdir -p \
     storage/framework/{sessions,views,cache,testing} \
     storage/logs \
     bootstrap/cache && chmod -R a+rw storage
 
-COPY --chown=${USER}:${USER} ${DOCKER_FILES_BASE_PATH}deployment/supervisord.conf /etc/supervisor/
-COPY --chown=${USER}:${USER} ${DOCKER_FILES_BASE_PATH}deployment/octane/FrankenPHP/supervisord.frankenphp.conf /etc/supervisor/conf.d/
-COPY --chown=${USER}:${USER} ${DOCKER_FILES_BASE_PATH}deployment/supervisord.*.conf /etc/supervisor/conf.d/
-COPY --chown=${USER}:${USER} ${DOCKER_FILES_BASE_PATH}deployment/start-container /usr/local/bin/start-container
-
-# FrankenPHP embedded PHP configuration
-COPY --chown=${USER}:${USER} ${DOCKER_FILES_BASE_PATH}deployment/php.ini /lib/php.ini
-
-#RUN composer install \
-#    --classmap-authoritative \
-#    --no-interaction \
-#    --no-ansi \
-#    --no-dev \
-#    && composer clear-cache
+RUN composer install \
+   --classmap-authoritative \
+   --no-interaction \
+   --no-ansi \
+   --no-dev \
+   && composer clear-cache
 
 RUN cat .env
 RUN php artisan env
@@ -192,3 +231,5 @@ RUN cat ${DOCKER_FILES_BASE_PATH}deployment/utilities.sh >> ~/.bashrc
 EXPOSE 8000
 
 ENTRYPOINT ["start-container"]
+
+#HEALTHCHECK --start-period=5s --interval=2s --timeout=5s --retries=8 CMD healthcheck || exit 1

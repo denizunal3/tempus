@@ -18,7 +18,7 @@ use Log;
 
 class ApiService
 {
-    private const string API_URL = 'https://app.solidtime.io/api/v1';
+    private const string API_URL = 'https://app.tempus.io/api/v1';
 
     public function checkForUpdate(): ?string
     {

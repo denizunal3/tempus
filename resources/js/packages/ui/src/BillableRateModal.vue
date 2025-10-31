@@ -39,7 +39,7 @@ defineProps<{
                         Learn more about the
                         <a
                             target="_blank"
-                            href="https://docs.solidtime.io/user-guide/billable-rates"
+                            href="https://docs.tempus.io/user-guide/billable-rates"
                             class="text-blue-400 hover:text-blue-500 transition"
                             >billable rate logic
                             <ArrowTopRightOnSquareIcon

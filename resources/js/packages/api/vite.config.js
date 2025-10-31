@@ -10,7 +10,7 @@ export default defineConfig({
             entry: resolve(__dirname, 'src/index.ts'),
             name: 'SolidtimeApi',
             // the proper extensions will be added
-            fileName: 'solidtime-api',
+            fileName: 'tempus-api',
         },
     },
 });

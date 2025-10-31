@@ -12,7 +12,7 @@ export default defineConfig({
             entry: resolve(__dirname, 'src/index.ts'),
             name: 'SolidTimeUiLib',
             // the name of the output files when the build is run
-            fileName: 'solidtime-ui-lib',
+            fileName: 'tempus-ui-lib',
         },
         rollupOptions: {
             // make sure to externalize deps that shouldn't be bundled

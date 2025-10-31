@@ -6,7 +6,7 @@ const showReleaseInfo = useStorage('showReleaseInfo-desktop', true);
 
 function openDesktopGithubRepo() {
     window
-        .open('https://github.com/solidtime-io/solidtime-desktop', '_blank')
+        .open('https://github.com/tempus-io/tempus-desktop', '_blank')
         ?.focus();
 }
 </script>

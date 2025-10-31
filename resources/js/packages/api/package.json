@@ -1,13 +1,13 @@
 {
-    "name": "@solidtime/api",
+    "name": "@tempus/api",
     "version": "0.0.4",
-    "description": "Package containing the solidtime api client and type declarations",
-    "main": "./dist/solidtime-api.umd.cjs",
-    "module": "./dist/solidtime-api.js",
+    "description": "Package containing the tempus api client and type declarations",
+    "main": "./dist/tempus-api.umd.cjs",
+    "module": "./dist/tempus-api.js",
     "types": "./dist/index.d.ts",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/solidtime-io/solidtime.git",
+        "url": "git+https://github.com/tempus-io/tempus.git",
         "directory": "resources/js/packages/api"
     },
     "scripts": {
@@ -18,14 +18,14 @@
         "dist"
     ],
     "keywords": [
-        "solidtime",
+        "tempus",
         "timetracker",
         "timetracking",
         "api",
         "client"
     ],
     "type": "module",
-    "author": "solidtime",
+    "author": "tempus",
     "license": "AGPL-3.0",
     "dependencies": {
         "@zodios/core": "^10.9.6",

@@ -1,13 +1,13 @@
-# solidtime - The modern Open-Source Time Tracker
+# tempus - The modern Open-Source Time Tracker
 
-[![GitHub License](https://img.shields.io/github/license/solidtime-io/solidtime?style=flat-square)](https://github.com/solidtime-io/solidtime/blob/main/LICENSE.md)
-[![Codecov](https://img.shields.io/codecov/c/github/solidtime-io/solidtime?style=flat-square&logo=codecov)](https://codecov.io/gh/solidtime-io/solidtime)
-![GitHub Actions Unit Tests Status](https://img.shields.io/github/actions/workflow/status/solidtime-io/solidtime/phpunit.yml?style=flat-square)
+[![GitHub License](https://img.shields.io/github/license/tempus-io/tempus?style=flat-square)](https://github.com/tempus-io/tempus/blob/main/LICENSE.md)
+[![Codecov](https://img.shields.io/codecov/c/github/tempus-io/tempus?style=flat-square&logo=codecov)](https://codecov.io/gh/tempus-io/tempus)
+![GitHub Actions Unit Tests Status](https://img.shields.io/github/actions/workflow/status/tempus-io/tempus/phpunit.yml?style=flat-square)
 ![PHPStan badge](https://img.shields.io/badge/PHPStan-Level_7-blue?style=flat-square&color=blue)
 
-![Screenshot of the solidtime application with header: solidtime - The modern Open-Source Time Tracker](docs/solidtime-banner.png "solidtime Banner")
+![Screenshot of the tempus application with header: tempus - The modern Open-Source Time Tracker](docs/tempus-banner.png "tempus Banner")
 
-solidtime is a modern open-source time tracking application for Freelancers and Agencies.
+tempus is a modern open-source time tracking application for Freelancers and Agencies.
 
 ## Features
 
@@ -22,11 +22,11 @@ solidtime is a modern open-source time tracking application for Freelancers and 
 
 ## Self Hosting
 
-If you are looking into self-hosting solidtime, you can find the guides [here](https://docs.solidtime.io/self-hosting/intro)
+If you are looking into self-hosting tempus, you can find the guides [here](https://docs.tempus.io/self-hosting/intro)
 
-We also have an examples repository [here](https://github.com/solidtime-io/self-hosting-examples)
+We also have an examples repository [here](https://github.com/tempus-io/self-hosting-examples)
 
-If you do not want to self-host solidtime or try it out you can sign up for [solidtime cloud](https://www.solidtime.io/)
+If you do not want to self-host tempus or try it out you can sign up for [tempus cloud](https://www.tempus.io/)
 
 ## Contributing
 

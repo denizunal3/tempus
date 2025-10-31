@@ -30,7 +30,7 @@ const show = defineModel('show', { default: false });
                 <div class="max-w-sm text-center mx-auto py-4 text-base">
                     <p class="py-1">
                         <strong>Project and Task Estimates</strong> is only
-                        available in solidtime Professional.
+                        available in tempus Professional.
                     </p>
                     <p class="py-1">
                         If you want to use this feature,
