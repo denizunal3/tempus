@@ -19,10 +19,6 @@ use App\Service\BillingContract;
 use App\Service\IpLookup\IpLookupServiceContract;
 use App\Service\IpLookup\NoIpLookupService;
 use App\Service\PermissionStore;
-use Dedoc\Scramble\Scramble;
-use Dedoc\Scramble\Support\Generator\OpenApi;
-use Dedoc\Scramble\Support\Generator\SecurityScheme;
-use Dedoc\Scramble\Support\Generator\SecuritySchemes\OAuthFlow;
 use Filament\Forms\Components\Section;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -77,17 +73,6 @@ class AppServiceProvider extends ServiceProvider
         }, null, true);
         Table::configureUsing(function (Table $table): void {
             $table->paginated([10, 25, 50, 100]);
-        });
-
-        // Scramble
-        Scramble::extendOpenApi(function (OpenApi $openApi): void {
-            $openApi->secure(
-                SecurityScheme::oauth2()
-                    ->flow('authorizationCode', function (OAuthFlow $flow): void {
-                        $flow
-                            ->authorizationUrl('https://solidtime.test/oauth/authorize');
-                    })
-            );
         });
 
         if (config('app.force_https', false)) {
