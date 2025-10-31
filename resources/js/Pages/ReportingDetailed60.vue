@@ -16,7 +16,7 @@ import {
 } from '@heroicons/vue/20/solid';
 import DateRangePicker from '@/packages/ui/src/Input/DateRangePicker.vue';
 import BillableIcon from '@/packages/ui/src/Icons/BillableIcon.vue';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import {
     getDayJsInstance,
     getLocalizedDayJs,
@@ -25,10 +25,6 @@ import { storeToRefs } from 'pinia';
 import TagDropdown from '@/packages/ui/src/Tag/TagDropdown.vue';
 import {
     api,
-    type Client,
-    type CreateClientBody,
-    type CreateProjectBody,
-    type Project,
     type TimeEntriesQueryParams,
     type TimeEntry,
     type TimeEntryResponse,
@@ -44,13 +40,6 @@ import { useSessionStorage } from '@vueuse/core';
 import { router } from '@inertiajs/vue3';
 import TabBar from '@/Components/Common/TabBar/TabBar.vue';
 import TabBarItem from '@/Components/Common/TabBar/TabBarItem.vue';
-import TimeEntryRow from '@/packages/ui/src/TimeEntry/TimeEntryRow.vue';
-import { useCurrentTimeEntryStore } from '@/utils/useCurrentTimeEntry';
-import { useProjectsStore } from '@/utils/useProjects';
-import { useTasksStore } from '@/utils/useTasks';
-import { useClientsStore } from '@/utils/useClients';
-import { getOrganizationCurrencyString } from '@/utils/money';
-import { useMembersStore } from '@/utils/useMembers';
 import {
     PaginationEllipsis,
     PaginationFirst,
@@ -63,13 +52,9 @@ import {
 } from 'radix-vue';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { getCurrentOrganizationId } from '@/utils/useUser';
-import { useTimeEntriesStore } from '@/utils/useTimeEntries';
 import ReportingExportButton from '@/Components/Common/Reporting/ReportingExportButton.vue';
 import type { ExportFormat } from '@/types/reporting';
 import { useNotificationsStore } from '@/utils/notification';
-import TimeEntryMassActionRow from '@/packages/ui/src/TimeEntry/TimeEntryMassActionRow.vue';
-import { isAllowedToPerformPremiumAction } from '@/utils/billing';
-import { canCreateProjects } from '@/utils/permissions';
 
 const startDate = useSessionStorage<string>(
     'reporting-start-date',
@@ -86,11 +71,10 @@ const selectedTasks = ref<string[]>([]);
 const selectedClients = ref<string[]>([]);
 const billable = ref<'true' | 'false' | null>(null);
 
-const { members } = storeToRefs(useMembersStore());
 const pageLimit = 60;
 const currentPage = ref(1);
 
-function getFilterAttributes() {
+function getFilterAttributes(): TimeEntriesQueryParams {
     let params: TimeEntriesQueryParams = {
         start: getLocalizedDayJs(startDate.value).startOf('day').utc().format(),
         end: getLocalizedDayJs(endDate.value).endOf('day').utc().format(),
@@ -120,13 +104,7 @@ function getFilterAttributes() {
     return params;
 }
 
-const currentTimeEntryStore = useCurrentTimeEntryStore();
-const { currentTimeEntry } = storeToRefs(currentTimeEntryStore);
-const { setActiveState, startLiveTimer } = currentTimeEntryStore;
 const { handleApiRequestNotifications } = useNotificationsStore();
-const { createTimeEntry, updateTimeEntry, updateTimeEntries } =
-    useTimeEntriesStore();
-
 const { tags } = storeToRefs(useTagsStore());
 
 const { data: timeEntryResponse } = useQuery<TimeEntryResponse>({
@@ -141,84 +119,71 @@ const { data: timeEntryResponse } = useQuery<TimeEntryResponse>({
         }),
 });
 
+const timeEntries = computed<TimeEntry[]>(() => {
+    return timeEntryResponse?.value?.data ?? [];
+});
+
 const totalPages = computed(() => {
     return timeEntryResponse?.value?.meta?.total ?? 1;
 });
 
-const timeEntriesStore = useTimeEntriesStore();
+const groupedEntries = computed(() => {
+    const map = new Map<string, TimeEntry[]>();
 
-async function deleteTimeEntries(timeEntries: TimeEntry[]) {
-    await timeEntriesStore.deleteTimeEntries(timeEntries);
-    selectedTimeEntries.value = [];
-    await updateFilteredTimeEntries();
-}
+    for (const entry of timeEntries.value) {
+        if (!entry.start) {
+            continue;
+        }
 
-const timeEntries = computed(() => {
-    return timeEntryResponse?.value?.data || [];
-});
-
-onMounted(async () => {
-    await updateFilteredTimeEntries();
-});
-
-const projectStore = useProjectsStore();
-const { projects } = storeToRefs(projectStore);
-const taskStore = useTasksStore();
-const { tasks } = storeToRefs(taskStore);
-const clientStore = useClientsStore();
-const { clients } = storeToRefs(clientStore);
-
-const selectedTimeEntries = ref<TimeEntry[]>([]);
-
-async function createTag(name: string) {
-    return await useTagsStore().createTag(name);
-}
-
-async function createProject(
-    project: CreateProjectBody
-): Promise<Project | undefined> {
-    return await useProjectsStore().createProject(project);
-}
-
-async function createClient(
-    body: CreateClientBody
-): Promise<Client | undefined> {
-    return await useClientsStore().createClient(body);
-}
-
-async function startTimeEntryFromExisting(entry: TimeEntry) {
-    if (currentTimeEntry.value.id) {
-        await setActiveState(false);
+        const dayKey = getLocalizedDayJs(entry.start)
+            .startOf('day')
+            .format();
+        const existing = map.get(dayKey) ?? [];
+        existing.push(entry);
+        map.set(dayKey, existing);
     }
-    await createTimeEntry({
-        project_id: entry.project_id,
-        task_id: entry.task_id,
-        start: getDayJsInstance().utc().format(),
-        end: null,
-        billable: entry.billable,
-        description: entry.description,
-    });
-    startLiveTimer();
-    updateFilteredTimeEntries();
-    useCurrentTimeEntryStore().fetchCurrentTimeEntry();
-}
+
+    return Array.from(map.entries())
+        .sort(
+            (a, b) =>
+                getDayJsInstance()(b[0]).valueOf() -
+                getDayJsInstance()(a[0]).valueOf()
+        )
+        .map(([date, entries]) => ({
+            date,
+            entries: [...entries].sort((entryA, entryB) => {
+                const startA = entryA.start
+                    ? getDayJsInstance()(entryA.start).valueOf()
+                    : 0;
+                const startB = entryB.start
+                    ? getDayJsInstance()(entryB.start).valueOf()
+                    : 0;
+                return startA - startB;
+            }),
+        }));
+});
+
 const queryClient = useQueryClient();
 async function updateFilteredTimeEntries() {
     await queryClient.invalidateQueries({
         queryKey: ['timeEntry', 'detailed-report-60'],
     });
 }
+
+
 watch(currentPage, () => {
     updateFilteredTimeEntries();
 });
-function deleteSelected() {
-    deleteTimeEntries(selectedTimeEntries.value);
+
+function handleFiltersChanged() {
+    if (currentPage.value !== 1) {
+        currentPage.value = 1;
+        return;
+    }
+
+    updateFilteredTimeEntries();
 }
 
-async function clearSelectionAndState() {
-    selectedTimeEntries.value = [];
-    await updateFilteredTimeEntries();
-}
 async function downloadExport(format: ExportFormat) {
     const organizationId = getCurrentOrganizationId();
     if (organizationId) {
@@ -238,6 +203,29 @@ async function downloadExport(format: ExportFormat) {
         );
         window.open(response.download_url, '_self')?.focus();
     }
+}
+
+function formatDateLabel(date: string) {
+    return getLocalizedDayJs(date).format('MMM D, YYYY');
+}
+
+function formatTimeRange(entry?: TimeEntry) {
+    if (!entry) {
+        return '—';
+    }
+
+    const startLabel = entry.start
+        ? getLocalizedDayJs(entry.start).format('HH:mm')
+        : '—';
+    const endLabel = entry.end
+        ? getLocalizedDayJs(entry.end).format('HH:mm')
+        : '—';
+
+    return `${startLabel} - ${endLabel}`;
+}
+
+async function createTag(name: string) {
+    return await useTagsStore().createTag(name);
 }
 </script>
 
@@ -275,7 +263,7 @@ async function downloadExport(format: ExportFormat) {
                     class="flex flex-wrap items-center space-y-2 sm:space-y-0 space-x-4">
                     <div class="text-sm font-medium">Filters</div>
                     <MemberMultiselectDropdown
-                        @submit="updateFilteredTimeEntries"
+                        @submit="handleFiltersChanged"
                         v-model="selectedMembers">
                         <template v-slot:trigger>
                             <ReportingFilterBadge
@@ -286,7 +274,7 @@ async function downloadExport(format: ExportFormat) {
                         </template>
                     </MemberMultiselectDropdown>
                     <ProjectMultiselectDropdown
-                        @submit="updateFilteredTimeEntries"
+                        @submit="handleFiltersChanged"
                         v-model="selectedProjects">
                         <template v-slot:trigger>
                             <ReportingFilterBadge
@@ -297,7 +285,7 @@ async function downloadExport(format: ExportFormat) {
                         </template>
                     </ProjectMultiselectDropdown>
                     <TaskMultiselectDropdown
-                        @submit="updateFilteredTimeEntries"
+                        @submit="handleFiltersChanged"
                         v-model="selectedTasks">
                         <template v-slot:trigger>
                             <ReportingFilterBadge
@@ -308,7 +296,7 @@ async function downloadExport(format: ExportFormat) {
                         </template>
                     </TaskMultiselectDropdown>
                     <ClientMultiselectDropdown
-                        @submit="updateFilteredTimeEntries"
+                        @submit="handleFiltersChanged"
                         v-model="selectedClients">
                         <template v-slot:trigger>
                             <ReportingFilterBadge
@@ -317,7 +305,7 @@ async function downloadExport(format: ExportFormat) {
                         </template>
                     </ClientMultiselectDropdown>
                     <TagDropdown
-                        @submit="updateFilteredTimeEntries"
+                        @submit="handleFiltersChanged"
                         :createTag
                         v-model="selectedTags"
                         :tags="tags">
@@ -331,7 +319,7 @@ async function downloadExport(format: ExportFormat) {
                     </TagDropdown>
 
                     <SelectDropdown
-                        @changed="updateFilteredTimeEntries"
+                        @changed="handleFiltersChanged"
                         v-model="billable"
                         :get-key-from-item="(item) => item.value"
                         :get-name-for-item="(item) => item.label"
@@ -365,81 +353,51 @@ async function downloadExport(format: ExportFormat) {
                     <DateRangePicker
                         v-model:start="startDate"
                         v-model:end="endDate"
-                        @submit="updateFilteredTimeEntries"></DateRangePicker>
+                        @submit="handleFiltersChanged"></DateRangePicker>
                 </div>
             </MainContainer>
         </div>
-        <TimeEntryMassActionRow
-            :selected-time-entries="selectedTimeEntries"
-            :canCreateProject="canCreateProjects()"
-            :enableEstimatedTime="isAllowedToPerformPremiumAction()"
-            @submit="clearSelectionAndState"
-            :delete-selected="deleteSelected"
-            @select-all="selectedTimeEntries = [...timeEntries]"
-            @unselect-all="selectedTimeEntries = []"
-            :all-selected="selectedTimeEntries.length === timeEntries.length"
-            :projects="projects"
-            :tasks="tasks"
-            :tags="tags"
-            :currency="getOrganizationCurrencyString()"
-            :clients="clients"
-            :update-time-entries="
-                (args) =>
-                    updateTimeEntries(
-                        selectedTimeEntries.map((timeEntry) => timeEntry.id),
-                        args
-                    )
-            "
-            :create-project="createProject"
-            :create-client="createClient"
-            :createTag="createTag"></TimeEntryMassActionRow>
-        <div class="w-full relative">
-            <div
-                v-for="entry in timeEntries"
-                :key="entry.id"
-                class="transition-colors"
-                :class="{
-                    'bg-menu-active': selectedTimeEntries.includes(entry),
-                }">
-                <TimeEntryRow
-                    :selected="selectedTimeEntries.includes(entry)"
-                    @selected="selectedTimeEntries.push(entry)"
-                    :canCreateProject="canCreateProjects()"
-                    @unselected="
-                        selectedTimeEntries = selectedTimeEntries.filter(
-                            (item) => item.id !== entry.id
-                        )
-                    "
-                    :createClient
-                    :createProject
-                    :enableEstimatedTime="isAllowedToPerformPremiumAction()"
-                    :projects="projects"
-                    :tasks="tasks"
-                    :tags="tags"
-                    :clients
-                    :createTag
-                    :updateTimeEntry
-                    :onStartStopClick="() => startTimeEntryFromExisting(entry)"
-                    :deleteTimeEntry="() => deleteTimeEntries([entry])"
-                    :currency="getOrganizationCurrencyString()"
-                    :members="members"
-                    showDate
-                    showMember
-                    :time-entry="entry"></TimeEntryRow>
+        <MainContainer class="py-6">
+            <div v-if="groupedEntries.length > 0" class="overflow-x-auto">
+                <table
+                    class="w-full border border-default-background-separator rounded-lg text-sm text-text-secondary">
+                    <thead class="bg-tertiary text-xs uppercase">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-medium">
+                                Date
+                            </th>
+                            <th class="px-4 py-3 text-left font-medium">
+                                Morning
+                            </th>
+                            <th class="px-4 py-3 text-left font-medium">
+                                Afternoon
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr
+                            v-for="group in groupedEntries"
+                            :key="group.date"
+                            class="border-t border-default-background-separator">
+                            <td class="px-4 py-3 font-semibold text-white">
+                                {{ formatDateLabel(group.date) }}
+                            </td>
+                            <td class="px-4 py-3">
+                                {{ formatTimeRange(group.entries[0]) }}
+                            </td>
+                            <td class="px-4 py-3">
+                                {{ formatTimeRange(group.entries[1]) }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            <div v-if="timeEntries.length === 0">
-                <div class="text-center pt-12">
-                    <ClockIcon
-                        class="w-8 text-icon-default inline pb-2"></ClockIcon>
-                    <h3 class="text-white font-semibold">
-                        No time entries found
-                    </h3>
-                    <p class="pb-5">
-                        Adjust the filters to see more time entries!
-                    </p>
-                </div>
+            <div v-else class="text-center py-12">
+                <ClockIcon class="w-8 text-icon-default inline pb-2"></ClockIcon>
+                <h3 class="text-white font-semibold">No time entries found</h3>
+                <p class="pb-5">Adjust the filters to see more time entries!</p>
             </div>
-        </div>
+        </MainContainer>
 
         <PaginationRoot
             :total="totalPages"
